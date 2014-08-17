@@ -8,9 +8,22 @@ A [zip file][1] with the activity data can be found on the course website.  The 
 
 The following code downloads the raw data set, uncompresses it, and reads it into the data frame "activity.data".  If the raw data file is already present locally, then the download process is skipped.  The code creates a log file including the date and time of the download, the md5 checksum of the compressed file, and the source URL.
 
-```{r GetRawActivityData, echo=TRUE}
+
+```r
 library(tools)
 library(plyr)
+```
+
+```
+## 
+## Attaching package: 'plyr'
+## 
+## The following object is masked from 'package:lubridate':
+## 
+##     here
+```
+
+```r
 library(lattice)
 library(scales)
 
@@ -54,11 +67,12 @@ variable.count    <- ncol (activity.data)
 variable.names    <- names(activity.data)
 ```
 
-The raw data set includes ``r formatC(observation.count,format="d",big.mark=",")`` observations of ``r formatC(variable.count,format="d",big.mark=",")`` variables.  The observed variables are ``r variable.names``.
+The raw data set includes `17,568` observations of `3` variables.  The observed variables are `steps, date, interval`.
 
 To simplify time series plotting, the date and interval columns are converted from character strings and integers to a POSIX time class.  In the raw source data, dates are stored as character strings in the format "yyyy-mm-dd".  Intervals are stored as integers in the form "hhmm" with leading zeros suppressed.  Thus the interval "2205" is equal to the time 22:05 or 10:05 PM.  The interval "115" is equal to the time 1:15 AM.  The constinuent date and time elements are converted to a single character string, which is then converted to POSIX time.  The converted POSIX timestamp is stored in a new column called "time.stamp".  A second column is added using just the interval data and a dummy date of 1999-01-01.  This allows intervals to be compared across multiple days and to be plotted as hours and minutes.  This column is called "posix.time".
 
-```{r CleanRawData, echo=TRUE}
+
+```r
 ##
 ##  Convert the date string and interval integers to POSIX time.  To do this the
 ##  interval has to be broken into its hour and minute components.  The hours are
@@ -82,7 +96,8 @@ Ignoring missing data, plot a histogram of the total number of steps taken each 
 
 To accomplish this, all complete observations are extracted from the total data set and the ddply function from the plyr package is used to compute the total number of steps recorded in each remaining day.  The result is used to compute the mean and median values.
 
-```{r StepsPerDay, echo=TRUE}
+
+```r
 ##
 ##  Extract only those rows with complete observations.  Compute the mean steps for each day
 ##  using ddply.  With the results, compute both the mean and median steps taken across all
@@ -96,17 +111,21 @@ median.steps.per.day <- median(steps.per.day$total.steps)
 
 Create a histogram showing the total number of steps taken each day.
 
-```{r StepsPerDayHistogram, echo=TRUE}
+
+```r
 hist(steps.per.day$total.steps,breaks=10,main="Steps per Day",xlab="Steps",ylab="Frequency",col="lightyellow")
 ```
 
-The mean number of steps taken per day is ``r formatC(mean.steps.per.day,format="d",big.mark=",")``.  The median number of steps taken per day is ``r formatC(median.steps.per.day,format="d",big.mark=",")``.
+![plot of chunk StepsPerDayHistogram](figure/StepsPerDayHistogram.png) 
+
+The mean number of steps taken per day is `10,766`.  The median number of steps taken per day is `10,765`.
 
 ## What is the average daily activity pattern?
 
 Display a time series plot of the average number of steps taken in each five minute interval, averaged across all days.  Using the cleaned data from the previous step, use the "ddply" function to compute the mean number of steps by interval.  Plot the result.  For reference, include a line that shows the inter-day mean.
 
-```{r StepsPerInterval}
+
+```r
 ##
 ##  Compute the mean for each interval.  The posix.interval value is used to allow comparison
 ##  across days (the date portion is set to a single value).  Compute the mean of the results
@@ -130,9 +149,12 @@ axis.POSIXct(1,at=seq(x.values[1],x.values[2],by="hour"),format="%H")
 abline(h=inter.day.mean,col="blue",lty=2)
 ```
 
+![plot of chunk StepsPerInterval](figure/StepsPerInterval.png) 
+
 Determine which five minute interval has, on average, the maximum number of steps.
 
-```{r MaximumAverageSteps, echo=TRUE}
+
+```r
 ##
 ##  Select the row that has the maximum value.  Retrieve the interval time and the maximum number
 ##  of steps.  These values are printed inline, below.
@@ -142,13 +164,14 @@ max.interval      <- max.mean.interval$posix.interval
 max.steps         <- max.mean.interval$mean.steps
 ```
 
-The five minute interval with the average maximum number of steps is ``r format(max.interval,format="%H:%M")`` with ``r max.steps`` steps.
+The five minute interval with the average maximum number of steps is `08:35` with `206.1698` steps.
 
 ## Imputing missing values
 
 Calculate the number of missing values in the source dataset.
 
-```{r CountMissingValues, echo=TRUE}
+
+```r
 ##
 ##  Determine which rows contain complete observations.  The sum of the negation
 ##  of that list is the count of missing values.  This value is printed inline below.
@@ -156,11 +179,12 @@ Calculate the number of missing values in the source dataset.
 missing.value.count <- sum(!complete.cases(activity.data))
 ```
 
-Of a total of ``r formatC(nrow(activity.data),format="d",big.mark=",")`` observations, ``r formatC(missing.value.count,format="d",big.mark=",")`` are missing values.
+Of a total of `17,568` observations, `2,304` are missing values.
 
 Create a new data set that imputes values for the missing data based on the five minute interval means computed above.  For example, if the step count is missing for the interval 11:45 on a particular day, the mean value for 11:45 across all days will be used instead.
 
-```{r ImputeMissingValues, echo=TRUE}
+
+```r
 ##
 ##  Make a copy of the activity data.  Loop through the copy identifying any missing
 ##  step values.  Replace the missing values with the mean value for that interval across
@@ -176,7 +200,8 @@ for (i in 1:nrow(activity.imputed)) {
 
 Compute the mean and median value for the new data set.  Display a histogram of the data set including the imputed values.
 
-```{r StepsPerDayImputed, echo=TRUE}
+
+```r
 ##
 ##  Compute the total steps per day for each day using the imputed data created above.  With
 ##  the result, compute the mean and median value across all days.  These values will be printed
@@ -188,7 +213,9 @@ median.steps.per.day <- median(steps.per.day$total.steps)
 hist(steps.per.day$total.steps,breaks=10,main="Steps per Day",xlab="Steps",ylab="Frequency",col="lightyellow")
 ```
 
-The mean number of steps taken per day is ``r formatC(mean.steps.per.day,format="d",big.mark=",")``.  The median number of steps taken per day is ``r formatC(median.steps.per.day,format="d",big.mark=",")``
+![plot of chunk StepsPerDayImputed](figure/StepsPerDayImputed.png) 
+
+The mean number of steps taken per day is `10,766`.  The median number of steps taken per day is `10,766`
 
 The general shape of the histogram did not change, since the imputed data was based on means drawn from the original data.  The frequencies did increase due to the addition of imputed data for previously incomplete days.  Similarly the mean and median did not change (other than due to rounding) because the imputed data was drawn from the same distribution.
 
@@ -196,7 +223,8 @@ The general shape of the histogram did not change, since the imputed data was ba
 
 Add a factor to the imputed data set indicating whether a sample came from a weekday or a weekend.
 
-```{r WeekdayFactor, echo=TRUE}
+
+```r
 ##
 ##  Add a day.type column to the imputed data set and default all values to "weekday".  Then
 ##  loop through the data set, determining the day of the week for each observation.  If that
@@ -214,7 +242,8 @@ activity.imputed$day.type <- factor(activity.imputed$day.type)
 
 Produce a lattice plot comparing weekend to weekday patterns.
 
-```{r DayTypePlots, echo=TRUE}
+
+```r
 ##
 ##  Compute the interval mean across all values in the imputed data.  As above, extract the hours
 ##  from the posix.time for later use as x-axis labels
@@ -232,6 +261,8 @@ xyplot(mean.steps ~ posix.interval | day.type, data=interval.means,
        ylab="Mean Steps",
        scales=list(format="%H"))
 ```
+
+![plot of chunk DayTypePlots](figure/DayTypePlots.png) 
 
 [1]: https://d396qusza40orc.cloudfront.net/repdata%2Fdata%2Factivity.zip "Activity Data - Course Site"
 [2]: https://github.com/naterk/RepData_PeerAssessment1/blob/master/activity.zip "Activity Data - Repo"
